@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String            @id @default(uuid())
+  name              String
+  email             String            @unique
+  avatarUrl         String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  learningRequests  LearningRequest[] 
+  teachingSessions  Session[]         @relation("TeacherSessions") 
+  teacherPoints     TeacherPoints?    
+}
+
+model LearningRequest {
+  id            String     @id @default(uuid())
+  userId        String
+  skillName     String
+  description   String?
+  preferredTime DateTime?
+  status        String
+  learningMode  String
+  onlineLink    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  student       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions      Session[]  
+}
+
+model Session {
+  id               String          @id @default(uuid())
+  requestId        String
+  teacherId        String
+  status           String
+  feedback         String?
+  rating           Int?
+  teacherPoints    Int
+  completedAt      DateTime?
+  createdAt        DateTime        @default(now())
+  learningMode     String
+  onlineLink       String?
+
+  learningRequest  LearningRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  teacher          User            @relation("TeacherSessions", fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+model TeacherPoints {
+  id                  String   @id @default(uuid())
+  teacherId           String   @unique
+  totalPoints         Int      @default(0)
+  averageRating       Float    @default(0)
+  sessionsCompleted   Int      @default(0)
+  isEligibleForEarnings Boolean @default(false)
+
+  teacher             User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+}
